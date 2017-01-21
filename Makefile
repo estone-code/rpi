@@ -34,7 +34,12 @@ SOBJS := $(sort $(filter-out $(SETUPOBJ),$(patsubst %.s,%.o,$(wildcard *.s))))
 COBJS := $(sort $(filter-out $(SETUPOBJ),$(patsubst %.c,%.o,$(wildcard *.c))))
 ELFFILE := $(BINFILE:.img=.elf)
 
-.PHONY: build clean install validate
+# http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
+DEPDIR := .d
+$(shell mkdir -p $(DEPDIR) >/dev/null)
+DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
+
+.PHONY: build clean distclean install validate
 .DEFAULT_GLOBAL: build
 
 build: validate $(BINFILE)
@@ -45,22 +50,32 @@ install: build
 clean:
 	rm -f *.o $(ELFFILE) $(BINFILE)
 
+distclean: clean
+	rm -rf $(DEPDIR) *~ \#*#
+
 validate:
 	@test 0 -eq $$(basename -s .c $$(basename -s .s $$(ls *.s *.c)) \
 	        | sort | uniq -d | wc -l) \
 	    || (echo 'Detected source files with identicial basenames.' \
 	        && false)
 
+$(DEPDIR)/%.d: ;
+.PRECIOUS: $(DEPDIR)/%.d
+
 %.o: %.s
 	$(AS) $(ASFLAGS) -o $@ $<
 
 %.o: %.c
-	$(CC) -c $(CCFLAGS) -o $@ $<
+%.o: %.c $(DEPDIR)/%.d
+	$(CC) $(DEPFLAGS) -c $(CCFLAGS) -o $@ $<
+	mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d
 
-$(LDSCRIPT):
+$(LDSCRIPT): ;
 
 $(ELFFILE): $(LDSCRIPT) $(SETUPOBJ) $(SOBJS) $(COBJS)
 	$(LD) -T $(LDSCRIPT) $(LDFLAGS) -o $@ $(SETUPOBJ) $(SOBJS) $(COBJS)
 
 $(BINFILE): $(ELFFILE)
 	$(OBJCOPY) $< -O binary $@
+
+-include $(patsubst %,$(DEPDIR)/%.d,$(basename $(wildcard *.c)))

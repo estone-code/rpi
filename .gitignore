@@ -1,5 +1,6 @@
 *~
 *.img
+*.d/
 
 # Object files
 *.o
