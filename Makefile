@@ -1,36 +1,66 @@
-INSTALLDIR=/var/lib/tftpboot/
-TOOLCHAIN=aarch64-none-elf
-AS=$(TOOLCHAIN)-as
-ASFLAGS=
-CC=$(TOOLCHAIN)-gcc
-CFLAGS=-O2 -Wall -nostdlib -nostartfiles -ffreestanding
-LD=$(TOOLCHAIN)-ld
-OBJCOPY=$(TOOLCHAIN)-objcopy
-RM=rm -f
-CP=cp
+# Builds .o's from .s and .c files and links them into an ELF binary.
+# (.S uppercase files are not supported by this makefile so assembler
+# preproccessor will not run)
+# A specific .o can be specified to be first in the link-order.
+# Then translates the ELF to a plain "binary binary". Eventually
+# would like to keep ELF for the debug symbols. This will require
+# some more knowledge of ldscript-ing, where to set the initial PC,
+# how to determine size of the loaded file etc.
 
-COBJS=sysmain.o
+INSTALLDIR := /var/lib/tftpboot/
+TOOLCHAIN := aarch64-none-elf
+LDSCRIPT := kernel.lds
+# the first (generated) object to be used in the link order. This code
+# probably first needs to set up the system's stack pointer.
+SETUPOBJ := setup.o
 
-.PHONY: clean all install
+# keep compiler from adding any extra library or setup code
+CCFLAGS := -O2 -Wall -nostdlib -nostartfiles -ffreestanding
+ASFLAGS :=
+LDFLAGS :=
 
-all: kernel.img
+# raspberrypi's bootloader requires these exact names, so unlikely to be
+# changed. This Makefile expects the .img suffix in its logic.
+BINFILE := kernel.img
+CONFFILE := config.txt
 
-install: kernel.img config.txt
-	$(CP) $^ $(INSTALLDIR)
+AS := $(TOOLCHAIN)-as
+CC := $(TOOLCHAIN)-gcc
+LD := $(TOOLCHAIN)-ld
+OBJCOPY := $(TOOLCHAIN)-objcopy
+
+# sorting is for deterministic link order
+SOBJS := $(sort $(filter-out $(SETUPOBJ),$(patsubst %.s,%.o,$(wildcard *.s))))
+COBJS := $(sort $(filter-out $(SETUPOBJ),$(patsubst %.c,%.o,$(wildcard *.c))))
+ELFFILE := $(BINFILE:.img=.elf)
+
+.PHONY: build clean install validate
+.DEFAULT_GLOBAL: build
+
+build: validate $(BINFILE)
+
+install: build
+	cp $(BINFILE) $(CONFFILE) $(INSTALLDIR)
 
 clean:
-	$(RM) $(COBJS) setup.o kernel.elf kernel.img
+	rm -f *.o $(ELFFILE) $(BINFILE)
 
-# lowercase '.s' suffix skips preprocessor.
-setup.o: setup.s
+validate:
+	@test 0 -eq $$(basename -s .c $$(basename -s .s $$(ls *.s *.c)) \
+	        | sort | uniq -d | wc -l) \
+	    || (echo 'Detected source files with identicial basenames.' \
+	        && false)
+
+%.o: %.s
 	$(AS) $(ASFLAGS) -o $@ $<
 
 %.o: %.c
-	$(CC) -c $(CFLAGS) -o $@ $<
+	$(CC) -c $(CCFLAGS) -o $@ $<
 
-kernel.elf: kernel.lds setup.o $(COBJS)
-	$(LD) -T kernel.lds -o $@ setup.o $(COBJS)
+$(LDSCRIPT):
 
-# raspberrypi's bootloader requires this name
-kernel.img: kernel.elf
+$(ELFFILE): $(LDSCRIPT) $(SETUPOBJ) $(SOBJS) $(COBJS)
+	$(LD) -T $(LDSCRIPT) $(LDFLAGS) -o $@ $(SETUPOBJ) $(SOBJS) $(COBJS)
+
+$(BINFILE): $(ELFFILE)
 	$(OBJCOPY) $< -O binary $@
