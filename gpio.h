@@ -46,4 +46,17 @@
 #define GPPUDCLK0 0x3F200098 /* GPIO Pin Pull-up/down Enable Clock 0. size: 32 */
 #define GPPUDCLK1 0x3F20009C /* GPIO Pin Pull-up/down Enable Clock 1. size: 32 */
 
+/* for GPFSEL* registers */
+#define GPIO_IS_INPUT   0b000
+#define GPIO_IS_OUTPUT  0b001
+#define GPIO_ALT_FUNC_0 0b100
+#define GPIO_ALT_FUNC_1 0b101
+#define GPIO_ALT_FUNC_2 0b110
+#define GPIO_ALT_FUNC_3 0b111
+#define GPIO_ALT_FUNC_4 0b011
+#define GPIO_ALT_FUNC_5 0b010
+
+#define GPIO_14_SEL_SHIFT 12
+#define GPIO_15_SEL_SHIFT 15
+
 #endif /* GPIO_H */
