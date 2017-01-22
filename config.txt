@@ -1,3 +1,9 @@
+# This file influences what the bootloader does
+
+# place the arm cores into 64-bit mode
 arm_control=0x200
+# don't run any bootcode on the arm, start at PC 0x0
 kernel_old=1
+
+# don't load any tags/symbol file into ram
 disable_commandline_tags=1
