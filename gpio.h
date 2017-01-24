@@ -9,11 +9,11 @@
  * website is really helpful, it's interactive so click on the pins.
  *
  * Each pin can be programmed to take on one of (up to 6) alternate
- * functions. For initial UART programming, we want to use ALT0
+ * functions. For initial UART programming, we want to use ALT5
  * for both the TX and RX pins.
  *
- * UART14 aka phys-pin8 is TXD for UART0 under ALT0
- * UART15 aka phys-pin10 is RXD for UART0 under ALT0
+ * UART14 aka phys-pin8 is TXD for UART1 under ALT5
+ * UART15 aka phys-pin10 is RXD for UART1 under ALT5
  */
 
 #define GPFSEL0   0x3F200000 /* GPIO Function Select 0. size: 32 */

@@ -3,19 +3,13 @@
 void sysmain(void)
 {
 	/*
-	 * Note that between the pi1/2 and pi3, I think the GPIO pin
-	 * assignments for mini-UART and full-UART were switched. This
-	 * is because bluetooth on pi3 uses the full UART. So pin
-	 * 14/15 on ALT_FUNC_0 are the mini-uart which is different
-	 * from a lot of online documentation.
-	 *
 	 * The sample code I'm working from sets up the UART first then
 	 * changes the GPIO pins, but I'm going to try reversing that.
 	 */
 
 	/*
-	 * set up the mini-UART's GPIO pins
-	 * 1. set the pins "alternatve functions"
+	 * set up the mini-UART's (UART1) GPIO pins
+	 * 1. set the pin's "alternatve functions"
 	 * 2. Disable the default "pull" on the pins (don't want high OR low)
 	 *    This is done with a careful procedure detailed in the BCM doc
 	 *    that involves:
