@@ -3,22 +3,29 @@
 // where program-counter is initilized to after
 // kernel.img is loaded into ram.
 //
-// For now, set 3 of the 4 cores spinning in a loop. Later
-// improve this to be wait-for-interrupt etc.
+// After the bootloader releases the ARM cores' reset,
+// all 4 of them will start executing the same code
+// from the same initial PC. To bring order to this
+// potential chaos, the first code we'll execute is
+// for each core to examine its 'id', and if it's not
+// '0' (there can be only one...), go into an infinite
+// loop.  (Later might improve on this to instead be
+// wait-for-interrupt). Then for the rest of the code
+// we can think there's only just the single core.
 //
-// For the remaining main core, we enter into 'c' code by first initializing
-// the stack-pointer, then branching to our 'sysmain' function.
-// A safety spin-loop follows just in case the sysmain
-// function ever returns (it shouldn't).
-//
-.global _start
-
 .text
 
+.global _start
 _start:
-	// TODO need to get all the cores spinning except our main core
-	MOV	SP, #0x100000	// 1 MiB
-	BL	sysmain
-
+	// If our core-id (found in the bottom nibble of the mpidr_el1 system
+	// register, see the A53's datasheet from arm) is non-zero, goto spin
+	mrs	x0, mpidr_el1
+	and	x0, x0, #0xF
+	cbnz	x0, spin
+	// only the "first" core should make it here. Initialize its
+	// stack-pointer and call the sysmain C function
+	mov	sp, #0x100000	// 1 MiB
+	bl	sysmain
+	// if sysmain ever accidentally returns, fall through to spin
 spin:
-	B	spin
+	b	spin
