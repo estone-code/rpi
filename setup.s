@@ -18,14 +18,23 @@
 .global _start
 _start:
 	// If our core-id (found in the bottom nibble of the mpidr_el1 system
-	// register, see the A53's datasheet from arm) is non-zero, goto spin
+	// register, see the A53's datasheet from arm) is non-zero, we're
+	// not the boot-core, and goto init_aux_core
 	mrs	x0, mpidr_el1
 	and	x0, x0, #0xF
-	cbnz	x0, spin
-	// only the "first" core should make it here. Initialize its
+	cbnz	x0, init_aux_core
+	// only the "first" (boot) core should make it here. Initialize its
 	// stack-pointer and call the sysmain C function
 	mov	sp, #0x100000	// 1 MiB
 	bl	sysmain
-	// if sysmain ever accidentally returns, fall through to spin
+	// if sysmain ever accidentally returns, fall through to spin.
+	// later this should instead invoke an 'oops' procedure.
 spin:
 	b	spin
+init_aux_core:
+	// for now there is no SMP support, so we set the non-boot
+	// cores to wait in low-power wfe state. If they ever get
+	// woken up, just loop back into wfe state.
+wait:
+	wfe
+	b	wait

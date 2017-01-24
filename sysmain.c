@@ -1,41 +1,21 @@
 #include "peripherals.h"
+#include "console.h"
 
 void sysmain(void)
 {
-	/*
-	 * The sample code I'm working from sets up the UART first then
-	 * changes the GPIO pins, but I'm going to try reversing that.
-	 */
+	unsigned char c;
 
-	/*
-	 * set up the mini-UART's (UART1) GPIO pins
-	 * 1. set the pin's "alternatve functions"
-	 * 2. Disable the default "pull" on the pins (don't want high OR low)
-	 *    This is done with a careful procedure detailed in the BCM doc
-	 *    that involves:
-	 *    - set a GPIO control register with new pull values
-	 *    - wait 150 cycles (to let the value get into the device?)
-	 *    - set a different GPIO control register that tells our specific
-	 *      pins to change their pull value to be what's now in that
-	 *      first control register
-	 *    - wait 150 cycles for the second control instructin to get to
-	 *      the device and take effect
-	 *    - reset the 1st control register that was modified to a default
-	 *      value
-	 *    - reset the 2nd control register modified to a default value
-	 */
-
-	/* set GPFSEL1 to have both pin 14 and 15 use ALT_FUNC_0 */
-
-	/*
-	 * 'enable' the mini-uart. It will start receiving signals
-	 * from the pins immediately. Now that its control registers
-	 * are active, set them to the settings we want.
-	 *
-	 * The sample code I'm looking at says the datasheet is wrong about
-	 * some control-bit settings so watch out for that.
-	 *
-	 */
-
+	console_init();
+	console_write("\nWelcome!\n");
+	while (1) {
+		console_write("kernel$ ");
+		while (1) {
+			c = console_read_char();
+			console_write_char(c);
+			if (c == 0x0D) { /* CR */
+				break;
+			}
+		}
+	}
 	return;
 }

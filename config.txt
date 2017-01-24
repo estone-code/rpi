@@ -1,4 +1,5 @@
 # This file influences what the bootloader does
+# https://www.raspberrypi.org/documentation/configuration/config-txt.md
 
 # place the arm cores into 64-bit mode
 arm_control=0x200
@@ -7,3 +8,23 @@ kernel_old=1
 
 # don't load any tags/symbol file into ram
 disable_commandline_tags=1
+
+# https://github.com/raspberrypi/firmware/issues/553
+# https://www.raspberrypi.org/blog/raspberry-pi-3-on-sale/
+# http://raspberrypi.stackexchange.com/questions/45570/how-do-i-make-serial-work-on-the-raspberry-pi3
+# This behavior is Pi version specific. For Pi3,
+# this doesn't really 'enable' the uart, it fixes the system
+# clocks so they don't vary for power savings. A varying clock
+# breaks the mini-uart since it bases its bit sampling on the
+# clock.  Note the mini-uart uses the system clock (cpu_freq setting)
+# which is the video-core 4's cpu, NOT the ARM cores.
+# Unless force_turbo=1, on the Pi3 this forces the graphics cpu
+# to 250 MHz where it might normally run at 400 MHz.
+enable_uart=1
+
+# Force the graphics cpu to a constant 400 MHz (Pi3), do not vary
+# clocks depending on power demands. Without this, the enable_uart=1
+# setting will keep the graphics cpu at a low 250 MHz.
+# This also disables frequency scaling of other clocks including the
+# ARM cores.
+force_turbo=1
