@@ -3,6 +3,9 @@
 #include "stdarg.h"
 #include "types.h"
 
+#define READLINE_BUF_SIZE 128
+static char readline_buf[READLINE_BUF_SIZE];
+
 s32 console_init()
 {
 	aux_mu_init();
@@ -113,4 +116,38 @@ s32 console_printf(const char *format, ...)
 	}
 	va_end(ap);
 	return 0;
+}
+
+char * console_readline(void)
+{
+	u32 i;
+	unsigned char c;
+
+	i = 0;
+	while (1) {
+		if (i >= READLINE_BUF_SIZE-1) {
+			break;
+		}
+		c = console_read_char();
+		/* echo on the console */
+		console_write_char(c);
+		if (c == 0x7F) { /* ascii delete */
+			i--;
+			/*
+			 * there might be better ways to do this or
+			 * configure my console differently
+			 */
+			console_write_char('\b');
+			console_write_char(' ');
+			console_write_char('\b');
+		} else if (c >= ' ') {
+			/* ascii chars above 0x20 (space) are printable */
+			readline_buf[i]	= c;
+			i++;
+		} else if (c == '\n' || c == '\r') {
+			break;
+		}
+	}
+	readline_buf[i] = '\0';
+	return readline_buf;
 }
