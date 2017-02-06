@@ -132,7 +132,9 @@ char * console_readline(void)
 		/* echo on the console */
 		console_write_char(c);
 		if (c == 0x7F) { /* ascii delete */
-			i--;
+			if (i > 0) {
+				i--;
+			}
 			/*
 			 * there might be better ways to do this or
 			 * configure my console differently
