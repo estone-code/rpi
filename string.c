@@ -4,6 +4,26 @@
 
 static char *strtok_ptr;
 
+int strcmp(const char *s1, const char *s2)
+{
+	int diff;
+	while (*s1) {
+		if (!*s2) {
+			return 1;
+		}
+		diff = *s1 - *s2;
+		if (diff) {
+			return diff;
+		}
+		s1++;
+		s2++;
+	}
+	if (*s2) {
+		return -1;
+	}
+	return 0;
+}
+
 size_t strlen(const char *str)
 {
 	size_t i;
