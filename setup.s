@@ -114,7 +114,9 @@ exception_vector_table:
 	.zero 128
 
 // has linker place the address of exception_vector_table into
-// a variable named exception_table_addr.
+// a variable named exception_table_addr. There are a few ways to
+// accomplish this.
+// http://stackoverflow.com/questions/18848776/what-does-label-word-label-mean-in-arm-assembly
 .global exception_table_addr
 align_table_addr:
 	.balign 8

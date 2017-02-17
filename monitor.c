@@ -8,6 +8,8 @@
 
 #define MAX_ARGS 10
 
+extern u64 *exception_table_addr;
+
 struct command {
 	char *name;
 	int (*fn)(int, char**);
@@ -48,6 +50,9 @@ static int command_test_string_fn(int argc, char **argv)
 	test_string = "Test String.";
 	console_printf("test_string start-addr: %x\n", test_string);
 	console_printf("test_string value: %s\n", test_string);
+
+	console_printf("table addr: %x\n", exception_table_addr);
+
 	return 0;
 }
 struct command command_test_string = { .name = "test_string",
