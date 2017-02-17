@@ -11,8 +11,9 @@
  */
 #include "aux.h"
 #include "gpio.h"
-#include "types.h"
+#include "ringbuffer.h"
 #include "system.h"
+#include "types.h"
 
 #define AUX_IRQ     0x3F215000 /* Auxiliary Interrupt status. size: 3 */
 #define AUX_ENABLES 0x3F215004 /* Auxiliary enables. size: 3 */
@@ -30,6 +31,8 @@
 #define AUX_MU_CNTL_REG 0x3F215060 /* Mini Uart Extra Control. size: 8 */
 #define AUX_MU_STAT_REG 0x3F215064 /* Mini Uart Extra Status. size: 32 */
 #define AUX_MU_BAUD_REG 0x3F215068 /* Mini Uart Baudrate. size: 16 */
+
+RINGBUFFER(read_buf, 1024);
 
 static void init_gpio_for_mu() {
 
@@ -142,10 +145,19 @@ s32 aux_mu_tx_byte_busywait(u8 byte)
 	return 0;
 }
 
+/*
+ * Implementation inroduces some buffering as a stepping-stone to
+ * async buffer-fill through interrupts.
+ */
 u8 aux_mu_rx_byte_busywait()
 {
 	u32 lsr_reg_val;
-	u8 retval;
+	u8 data;
+
+	if (dequeue(&read_buf, &data) >= 0) {
+		/* If the buffer has an available byte just fast-return it */
+		return data;
+	}
 
 	wmb();
 	while (1)
@@ -156,7 +168,15 @@ u8 aux_mu_rx_byte_busywait()
 			break;
 		}
 	}
-	retval = *(volatile u32 *)AUX_MU_IO_REG;
+
+	/* drain as much as we can into our buffer */
+	do {
+		data = *(volatile u32 *)AUX_MU_IO_REG;
+		enqueue(&read_buf, data);
+		lsr_reg_val = *(volatile u32 *)AUX_MU_LSR_REG;
+	} while (lsr_reg_val & 0x1);
 	rmb();
-	return retval;
+
+	dequeue(&read_buf, &data);
+	return data;
 }
