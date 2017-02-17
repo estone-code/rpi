@@ -8,8 +8,19 @@ MEMORY
      ram : ORIGIN = 0x0, LENGTH = 0x100000
 }
 
+/*
+ * https://sourceware.org/binutils/docs/ld/Source-Code-Reference.html#Source-Code-Reference
+ */
 SECTIONS
 {
-    .text : { *(.text*) } > ram
-    .bss : { *(.bss*) } > ram
+    .text (0x0) : { *(.text*) } > ram
+    .rodata : { *(.rodata*) } > ram
+    .data :  { *(.data*) } > ram
+    .bss : ALIGN(8) {
+        _START_OF_BSS = .;
+        *(.bss*)
+        . = ALIGN(8);
+        _END_OF_BSS = .;
+    } > ram
+
 }
